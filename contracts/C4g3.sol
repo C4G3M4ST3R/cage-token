@@ -5,7 +5,7 @@ import "./SafeMath.sol";
 
 contract C4g3 {
     /// @notice EIP-20 token name for this token
-    string public constant name = "Cage";
+    string public constant name = "CAGE";
 
     /// @notice EIP-20 token symbol for this token
     string public constant symbol = "C4G3";
