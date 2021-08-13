@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 pragma experimental ABIEncoderV2;
 
@@ -17,7 +18,7 @@ contract C4g3 {
     uint public totalSupply = 1_000_000_000_000e18; // 1 trillion C4g3
 
     /// @notice Official record of token balances for each account
-    mapping (address => uint96) internal balances;
+    mapping (address => uint128) internal balances;
 
     /// @notice The EIP-712 typehash for the contract's domain
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
@@ -35,7 +36,7 @@ contract C4g3 {
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 
     /// @notice Allowance amounts on behalf of others
-    mapping (address => mapping (address => uint96)) internal allowances;
+    mapping (address => mapping (address => uint128)) internal allowances;
 
 
 
@@ -44,7 +45,7 @@ contract C4g3 {
      * @param account The initial account to grant all the tokens
      */
     constructor(address account) public {
-        balances[account] = uint96(totalSupply);
+        balances[account] = uint128(totalSupply);
         emit Transfer(address(0), account, totalSupply);
     }
 
@@ -68,11 +69,11 @@ contract C4g3 {
      * @return Whether or not the approval succeeded
      */
     function approve(address spender, uint rawAmount) external returns (bool) {
-        uint96 amount;
+        uint128 amount;
         if (rawAmount == type(uint).max) {
-            amount = type(uint96).max;
+            amount = type(uint128).max;
         }  else {
-            amount = safe96(rawAmount, "C4g3::approve: amount exceeds 96 bits");
+            amount = safe128(rawAmount, "C4g3::approve: amount exceeds 128 bits");
         }
 
         allowances[msg.sender][spender] = amount;
@@ -92,11 +93,11 @@ contract C4g3 {
      * @param s Half of the ECDSA signature pair
      */
     function permit(address owner, address spender, uint rawAmount, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
-        uint96 amount;
+        uint128 amount;
         if (rawAmount == type(uint).max) {
-            amount = type(uint96).max;
+            amount = type(uint128).max;
         } else {
-            amount = safe96(rawAmount, "C4g3::permit: amount exceeds 96 bits");
+            amount = safe128(rawAmount, "C4g3::permit: amount exceeds 128 bits");
         }
 
         bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
@@ -128,7 +129,7 @@ contract C4g3 {
      * @return Whether or not the transfer succeeded
      */
     function transfer(address dst, uint rawAmount) external returns (bool) {
-        uint96 amount = safe96(rawAmount, "C4g3::transfer: amount exceeds 96 bits");
+        uint128 amount = safe128(rawAmount, "C4g3::transfer: amount exceeds 128 bits");
         _transferTokens(msg.sender, dst, amount);
         return true;
     }
@@ -142,11 +143,11 @@ contract C4g3 {
      */
     function transferFrom(address src, address dst, uint rawAmount) external returns (bool) {
         address spender = msg.sender;
-        uint96 spenderAllowance = allowances[src][spender];
-        uint96 amount = safe96(rawAmount, "C4g3::approve: amount exceeds 96 bits");
+        uint128 spenderAllowance = allowances[src][spender];
+        uint128 amount = safe128(rawAmount, "C4g3::approve: amount exceeds 128 bits");
 
-        if (spender != src && spenderAllowance != type(uint96).max) {
-            uint96 newAllowance = sub96(spenderAllowance, amount, "C4g3::transferFrom: transfer amount exceeds spender allowance");
+        if (spender != src && spenderAllowance != type(uint128).max) {
+            uint128 newAllowance = sub128(spenderAllowance, amount, "C4g3::transferFrom: transfer amount exceeds spender allowance");
             allowances[src][spender] = newAllowance;
 
             emit Approval(src, spender, newAllowance);
@@ -157,12 +158,12 @@ contract C4g3 {
     }
 
 
-    function _transferTokens(address src, address dst, uint96 amount) internal {
+    function _transferTokens(address src, address dst, uint128 amount) internal {
         require(src != address(0), "C4g3::_transferTokens: cannot transfer from the zero address");
         require(dst != address(0), "C4g3::_transferTokens: cannot transfer to the zero address");
 
-        balances[src] = sub96(balances[src], amount, "C4g3::_transferTokens: transfer amount exceeds balance");
-        balances[dst] = add96(balances[dst], amount, "C4g3::_transferTokens: transfer amount overflows");
+        balances[src] = sub128(balances[src], amount, "C4g3::_transferTokens: transfer amount exceeds balance");
+        balances[dst] = add128(balances[dst], amount, "C4g3::_transferTokens: transfer amount overflows");
         emit Transfer(src, dst, amount);
 
     }
@@ -172,18 +173,18 @@ contract C4g3 {
         return uint32(n);
     }
 
-    function safe96(uint n, string memory errorMessage) internal pure returns (uint96) {
-        require(n < 2**96, errorMessage);
-        return uint96(n);
+    function safe128(uint n, string memory errorMessage) internal pure returns (uint128) {
+        require(n < 2**128, errorMessage);
+        return uint128(n);
     }
 
-    function add96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
-        uint96 c = a + b;
+    function add128(uint128 a, uint128 b, string memory errorMessage) internal pure returns (uint128) {
+        uint128 c = a + b;
         require(c >= a, errorMessage);
         return c;
     }
 
-    function sub96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
+    function sub128(uint128 a, uint128 b, string memory errorMessage) internal pure returns (uint128) {
         require(b <= a, errorMessage);
         return a - b;
     }
